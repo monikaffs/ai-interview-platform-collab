@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My History | AI Hire</title>
+    <meta name="description" content="Review your past AI interview sessions.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Hidden element: lets JS know Flask session is active -->
+    <span id="flask-user-id" data-user-id="{{ session.get('user_id', '') }}" style="display:none;"></span>
+
+    <style>
+        /* ====================================
+           SHARED PREMIUM STYLES
+        ==================================== */
+        :root {
+            --bg-base: #020617;
+            --surface: #0f172a;
+            --surface2: #1e293b;
+            --accent: #0ea5e9;
+            --accent-navy: #1e40af;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: rgba(255,255,255,0.07);
+            --sidebar-w: 240px;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            background: var(--bg-base); color: var(--text);
+            font-family: 'Inter', sans-serif; display: flex;
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .premium-sidebar {
+            width: var(--sidebar-w); background: rgba(15,23,42,0.97);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;
+            padding: 32px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; backdrop-filter: blur(20px);
+        }
+
+        .brand-logo {
+            font-size: 1.7rem; font-weight: 900; color: white; padding: 0 28px; margin-bottom: 36px; letter-spacing: -1px;
+        }
+        .brand-logo .dot { color: var(--accent); }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 4px; padding: 0 14px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; border-radius: 14px;
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.92rem; font-weight: 600; transition: all 0.2s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .nav-item.active { background: rgba(14,165,233,0.12); color: var(--accent); }
+        .nav-item i { width: 18px; text-align: center; font-size: 0.95rem; }
+        .logout-btn-red { color: #f87171; }
+        .logout-btn-red:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+
+        /* ---- MAIN CONTENT ---- */
+        .main-viewport {
+            margin-left: var(--sidebar-w); 
+            flex: 1; 
+            padding: 36px 40px; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-list { flex: 1; }
+
+        /* ---- HEADER ---- */
+        .dashboard-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px;
+        }
+        .welcome-text h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+        .welcome-text p { color: var(--text-dim); font-size: 1rem; }
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .user-avatar-circle {
+            width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent-navy), var(--accent));
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.95rem; color: white; text-decoration: none; cursor: pointer;
+        }
+
+        /* ---- PREMIUM FOOTER ---- */
+        .dashboard-footer {
+            margin-top: 60px; padding-top: 32px; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--text-dim); font-size: 0.85rem;
+        }
+        .footer-brand h4 { color: rgba(255,255,255,0.8); font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+        .footer-brand p { font-size: 0.8rem; opacity: 0.6; }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; 
+            transition: all 0.3s ease; position: relative;
+        }
+        .footer-links a:hover { 
+            color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.5); 
+        }
+
+        /* ====================================
+           HISTORY SPECIFIC STYLES
+        ==================================== */
+        .premium-controls-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+            background: var(--surface); padding: 16px 24px; border-radius: 20px;
+            border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            flex-wrap: wrap; gap: 16px;
+        }
+        .filter-pills { display: flex; gap: 12px; flex-wrap: wrap; }
+        
+        /* Glassmorphism Filter Pills */
+        .glass-pill {
+            padding: 8px 18px; border-radius: 30px; border: none; outline: none;
+            font-size: 0.85rem; font-weight: 700; color: var(--text-dim); 
+            text-transform: uppercase; letter-spacing: 0.5px; 
+            cursor: pointer; transition: all 0.3s ease;
+            background: rgba(255,255,255,0.03); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .glass-pill:hover {
+            color: white; background: rgba(255,255,255,0.08); transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1);
+        }
+        .glass-pill.active {
+            color: var(--accent); background: rgba(14,165,233,0.15);
+            border-color: rgba(14,165,233,0.3); text-shadow: 0 0 10px rgba(14,165,233,0.4);
+            box-shadow: 0 4px 15px rgba(14,165,233,0.2);
+        }
+
+        .premium-search { position: relative; width: 280px; }
+        .premium-search i {
+            position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-dim);
+        }
+        .premium-search input {
+            width: 100%; background: var(--surface2); border: 1px solid var(--border);
+            padding: 10px 16px 10px 42px; border-radius: 14px; color: white;
+            font-family: inherit; font-size: 0.9rem; outline: none; transition: 0.3s;
+        }
+        .premium-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+
+        /* History Rows */
+        .history-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+        
+        .history-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-radius: 16px; background: var(--surface);
+            border: 1px solid var(--border); transition: all 0.3s ease;
+        }
+        .history-row:hover {
+            border-color: rgba(14,165,233,0.3); transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .job-meta { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 250px; }
+        .j-role { font-weight: 800; font-size: 1.05rem; }
+        .j-company { color: var(--text-dim); font-size: 0.85rem; }
+        
+        .session-date { color: var(--text-dim); font-size: 0.85rem; font-weight: 600; width: 120px; }
+        
+        .score-pill {
+            padding: 6px 16px; background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.2);
+            border-radius: 20px; font-weight: 800; color: var(--accent); font-size: 0.9rem; min-width: 70px; text-align: center;
+        }
+
+        .status-glow {
+            display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.5px; width: 120px; text-transform: uppercase;
+        }
+        .status-glow .s-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        
+        .status-glow.completed { color: #4ade80; }
+        .status-glow.remaining { color: #fbbf24; }
+        .status-glow.approved { color: #a855f7; }
+        .status-glow.rejected { color: #f87171; }
+
+        .aurora-link-btn {
+            padding: 8px 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            border-radius: 12px; color: white; text-decoration: none; font-size: 0.85rem;
+            font-weight: 700; transition: 0.2s; white-space: nowrap;
+        }
+        .aurora-link-btn:hover { background: rgba(14,165,233,0.15); border-color: var(--accent); color: var(--accent); }
+        .aurora-link-btn.resume { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.2); color: #fbbf24; }
+        .aurora-link-btn.resume:hover { background: rgba(251,191,36,0.2); border-color: #fbbf24; }
+
+        /* Empty State */
+        .empty-history {
+            text-align: center; color: var(--text-dim); padding: 60px 20px;
+            background: var(--surface); border: 1px dashed rgba(255,255,255,0.1); border-radius: 20px;
+        }
+        .empty-history i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+    </style>
+</head>
+
+<body>
+    <!-- STATIC SIDEBAR NAVIGATION -->
+    <nav class="premium-sidebar">
+        <div class="sidebar-top">
+            <a href="/dashboard" style="text-decoration:none;"><div class="brand-logo">AI Hire<span class="dot">.</span></div></a>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-item">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="/view_all" class="nav-item active">
+                    <i class="fas fa-history"></i> My History
+                </a>
+                <a href="/explore" class="nav-item">
+                    <i class="fas fa-compass"></i> Explore More Interviews
+                </a>
+                <a href="/results" class="nav-item">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="/profile" class="nav-item">
+                    <i class="fas fa-user-shield"></i> Profile
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;" class="nav-item logout-btn-red">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-viewport">
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="welcome-text">
+                <h1>My History</h1>
+                <p>Review performance metrics and session recordings from your past evaluations.</p>
+            </div>
+            <div class="header-tools">
+                <a href="/profile" title="View Profile">
+                    <div class="user-avatar-circle" id="display-initials">{{ initials }}</div>
+                </a>
+            </div>
+        </header>
+
+        <!-- CONTROLS & FILTERS -->
+        <section class="premium-controls-row">
+            <div class="premium-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="history-search" placeholder="Search by role or company..." onkeyup="filterHistoryTable()">
+            </div>
+            <div class="filter-pills">
+                <button class="glass-pill active" onclick="filterHistoryStatus('all', this)">All</button>
+                <button class="glass-pill" onclick="filterHistoryStatus('completed', this)">Completed</button>
+                <button class="glass-pill" onclick="filterHistoryStatus('approved', this)">Approved</button>
+                <button class="glass-pill" onclick="filterHistoryStatus('rejected', this)">Rejected</button>
+            </div>
+        </section>
+
+        <!-- HISTORY LIST -->
+        <div class="history-list" id="full-history-list">
+            <!-- Data will be populated here via Supabase JS -->
+            <div class="empty-history" id="loading-history">
+                <i class="fas fa-circle-notch fa-spin" style="color:var(--accent); opacity:1;"></i>
+                <p>Securely fetching your interview records...</p>
+            </div>
+        </div>
+
+        <footer class="dashboard-footer">
+        <div class="footer-brand">
+            <h4>AI Hire<span class="dot">.</span></h4>
+            <p>Advanced Generative Intelligence for Modern Recruitment.</p>
+        </div>
+        <div class="footer-links">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/view_all">History</a>
+            <a href="/profile">Profile</a>
+            <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;">Logout</a>
+        </div>
+    </footer>
+
+    </main>
+
+    <script src="https://ui-avatars.com/api/?name=Role&background=0ea5e9&color=fff"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ url_for('static', filename='js/supabase_client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/view_all.js') }}"></script>
+    
+    <script>
+        // DOM Filters for My History Page (fallback/helper)
+        function filterHistoryTable() {
+            const input = document.getElementById('history-search');
+            if (!input) return;
+            const filter = input.value.toUpperCase();
+            document.querySelectorAll('.history-row').forEach(row => {
+                const text = row.querySelector('.job-meta').innerText.toUpperCase();
+                row.style.display = text.includes(filter) ? 'flex' : 'none';
+            });
+        }
+
+        function filterHistoryStatus(status, btn) {
+            document.querySelectorAll('.glass-pill').forEach(p => p.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.history-row').forEach(row => {
+                row.style.display = (status === 'all' || row.getAttribute('data-status') === status) ? 'flex' : 'none';
+            });
+        }
+    </script>
+
+</body>
+</html>

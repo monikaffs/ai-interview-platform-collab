@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating... | AI Hire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #020617, #0f172a, #1e3a8a, #0c4a6e, #020617);
+            background-size: 400% 400%;
+            animation: aurora 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        @keyframes aurora {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .spinner-box {
+            text-align: center;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 50px 60px;
+            border-radius: 32px;
+            border: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+        .spinner {
+            width: 52px;
+            height: 52px;
+            border: 4px solid rgba(14, 165, 233, 0.2);
+            border-top-color: #0ea5e9;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 24px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+        p { color: #94a3b8; font-size: 0.95rem; }
+        .error-box {
+            display: none;
+            margin-top: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="spinner-box">
+        <div class="spinner"></div>
+        <h2>Completing Sign In...</h2>
+        <p>Please wait, setting up your session.</p>
+        <div id="errorBox" class="error-box"></div>
+    </div>
+
+    <!-- Load Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // FIX: Initialize client (same pattern as login/signup)
+        const _lib = window.supabase;
+        const _client = _lib.createClient(
+            'https://isofuilekbgleahrxnkc.supabase.co',
+            'sb_publishable_M7ZeZgexKOn82r8cXzfxdw_ZRNikdVp'
+        );
+        window.supabase = _client;
+
+        function showError(msg) {
+            const el = document.getElementById('errorBox');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        async function handleCallback() {
+            try {
+                // FIX: After an OAuth redirect, the access_token is in the URL hash (#).
+                // getSession() correctly reads and exchanges it; getUser() alone does NOT.
+                const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
+
+                if (sessionError) {
+                    showError('Auth error: ' + sessionError.message);
+                    setTimeout(() => window.location.href = '/login', 3000);
+                    return;
+                }
+
+                if (!session || !session.user) {
+                    // No session found — redirect back to login
+                    showError('No session found. Redirecting to login...');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                    return;
+                }
+
+                const user = session.user;
+
+                // Sync the authenticated user to Flask session
+                const res = await fetch('/api/set_session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: user.id,
+                        email: user.email,
+                        name: user.user_metadata?.full_name || user.email.split('@')[0]
+                    })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    showError('Session sync failed. Redirecting to login...');
+                    setTimeout(() => window.location.href = '/login', 3000);
+                }
+            } catch (err) {
+                showError('Unexpected error: ' + err.message);
+                setTimeout(() => window.location.href = '/login', 3000);
+            }
+        }
+
+        // Run immediately on page load
+        handleCallback();
+    </script>
+</body>
+</html>

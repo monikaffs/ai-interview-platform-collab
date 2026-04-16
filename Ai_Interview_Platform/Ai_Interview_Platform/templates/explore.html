@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Interviews | AI Hire</title>
+    <meta name="description" content="Explore all available AI-powered mock interviews.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Hidden element: lets JS know Flask session is active -->
+    <span id="flask-user-id" data-user-id="{{ session.get('user_id', '') }}" style="display:none;"></span>
+
+    <style>
+        /* ====================================
+           SHARED PREMIUM STYLES
+        ==================================== */
+        :root {
+            --bg-base: #020617;
+            --surface: #0f172a;
+            --surface2: #1e293b;
+            --accent: #0ea5e9;
+            --accent-navy: #1e40af;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: rgba(255,255,255,0.07);
+            --sidebar-w: 240px;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            background: var(--bg-base); color: var(--text);
+            font-family: 'Inter', sans-serif; display: flex;
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .premium-sidebar {
+            width: var(--sidebar-w); background: rgba(15,23,42,0.97);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;
+            padding: 32px 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; backdrop-filter: blur(20px);
+        }
+
+        .brand-logo {
+            font-size: 1.7rem; font-weight: 900; color: white; padding: 0 28px; margin-bottom: 36px; letter-spacing: -1px;
+        }
+        .brand-logo .dot { color: var(--accent); }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 4px; padding: 0 14px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; border-radius: 14px;
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.92rem; font-weight: 600; transition: all 0.2s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .nav-item.active { background: rgba(14,165,233,0.12); color: var(--accent); }
+        .nav-item i { width: 18px; text-align: center; font-size: 0.95rem; }
+        .logout-btn-red { color: #f87171; }
+        .logout-btn-red:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+
+        /* ---- MAIN CONTENT ---- */
+        .main-viewport {
+            margin-left: var(--sidebar-w); 
+            flex: 1; 
+            padding: 36px 40px; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-content { flex: 1; }
+
+        /* ---- HEADER ---- */
+        .dashboard-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px;
+        }
+        .welcome-text h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+        .welcome-text p { color: var(--text-dim); font-size: 1rem; }
+        .header-tools { display: flex; align-items: center; gap: 16px; }
+        .user-avatar-circle {
+            width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent-navy), var(--accent));
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.95rem; color: white; text-decoration: none; cursor: pointer;
+        }
+
+        /* ---- CATALOG FILTERS ---- */
+        .catalog-filters {
+            display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 30px;
+            background: var(--surface); padding: 20px; border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; }
+        .filter-group label {
+            font-size: 0.8rem; color: var(--text-dim); font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .filter-select {
+            appearance: none; -webkit-appearance: none;
+            background: var(--surface2) url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M1.41%200L6%204.58L10.59%200L12%201.41L6%207.41L0%201.41L1.41%200Z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E") no-repeat right 16px center;
+            border: 1px solid var(--border); color: white; padding: 10px 40px 10px 16px;
+            border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            font-weight: 600; outline: none; cursor: pointer; min-width: 180px; transition: all 0.2s;
+        }
+        .filter-select:hover, .filter-select:focus { border-color: var(--accent); }
+
+        /* ---- JOB CARDS GRID ---- */
+        .job-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 36px;
+        }
+
+        .job-glass-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+            padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .job-glass-card:hover {
+            border-color: rgba(14,165,233,0.4); transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .card-glow {
+            position: absolute; top: -30px; right: -30px; width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(14,165,233,0.12), transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .job-card-header { display: flex; align-items: center; justify-content: space-between; }
+        /* ---- LOG𝗢S ---- */
+        .company-logo {
+            width: 44px; height: 44px; border-radius: 12px; object-fit: contain;
+            background: white; padding: 6px; border: 1px solid var(--border);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* ---- DIFFICULTY TAGS (Glassmorphism) ---- */
+        .difficulty-pill {
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; 
+            letter-spacing: 0.5px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .difficulty-pill.hard   { background:rgba(239,68,68,0.15);  color:#f87171; text-shadow: 0 0 10px rgba(239,68,68,0.4); }
+        .difficulty-pill.medium { background:rgba(251,191,36,0.15); color:#fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.4); }
+        .difficulty-pill.easy   { background:rgba(34,197,94,0.15);  color:#4ade80; text-shadow: 0 0 10px rgba(34,197,94,0.4); }
+
+        .job-card-body h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+        .job-card-body p  { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 10px; }
+
+        .job-traits { display: flex; gap: 10px; }
+        .job-traits span {
+            font-size: 0.8rem; color: var(--text-dim); font-weight: 600;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .job-traits i { font-size: 0.75rem; color: var(--accent); }
+
+        .aurora-btn {
+            display: block; text-align: center;
+            background: linear-gradient(135deg, var(--accent-navy), var(--accent));
+            color: white; padding: 12px 20px; border-radius: 14px; text-decoration: none;
+            font-weight: 700; font-size: 0.9rem; transition: 0.25s;
+            box-shadow: 0 6px 20px rgba(14,165,233,0.2); margin-top: auto;
+        }
+        .aurora-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(14,165,233,0.35); }
+
+        /* ---- PREMIUM FOOTER ---- */
+        .dashboard-footer { 
+            padding: 40px; 
+            margin-top: auto; 
+            border-top: 1px solid var(--surface2); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            color: var(--text-dim); 
+        }
+        .footer-brand h4 { color: rgba(255,255,255,0.8); font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+        .footer-brand p { font-size: 0.8rem; opacity: 0.6; }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; 
+            transition: all 0.3s ease; position: relative;
+        }
+        .footer-links a:hover { 
+            color: #ffffff; 
+            text-shadow: 0 0 8px rgba(255,255,255,0.5); 
+        }
+    </style>
+</head>
+
+<body>
+    <!-- STATIC SIDEBAR NAVIGATION -->
+    <nav class="premium-sidebar">
+        <div class="sidebar-top">
+            <a href="/dashboard" style="text-decoration:none;"><div class="brand-logo">AI Hire<span class="dot">.</span></div></a>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-item">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="/view_all" class="nav-item">
+                    <i class="fas fa-history"></i> My History
+                </a>
+                <a href="/explore" class="nav-item active">
+                    <i class="fas fa-compass"></i> Explore More Interviews
+                </a>
+                <a href="/results" class="nav-item">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="/profile" class="nav-item">
+                    <i class="fas fa-user-shield"></i> Profile
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;" class="nav-item logout-btn-red">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-viewport">
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="welcome-text">
+                <h1>Explore Interviews</h1>
+                <p>Browse our complete catalog of AI-powered technical evaluations.</p>
+            </div>
+            <div class="header-tools">
+                <a href="/profile" title="View Profile">
+                    <div class="user-avatar-circle" id="display-initials">{{ initials }}</div>
+                </a>
+            </div>
+        </header>
+
+        <!-- FILTERS -->
+        <div class="catalog-filters">
+            <div class="filter-group">
+                <label for="roleFilter">Technical Role</label>
+                <select id="roleFilter" class="filter-select" onchange="filterCatalog()">
+                    <option value="All">All Roles</option>
+                    <option value="Frontend">Frontend Development</option>
+                    <option value="Backend">Backend Development</option>
+                    <option value="Full Stack">Full Stack Development</option>
+                    <option value="Data Science">Data Science Focus</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="difficultyFilter">Interview Difficulty</label>
+                <select id="difficultyFilter" class="filter-select" onchange="filterCatalog()">
+                    <option value="All">All Difficulties</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- JOB CARDS GRID -->
+        <div class="job-grid" id="catalog-grid">
+            
+            <div class="job-glass-card catalog-item" data-role="Frontend" data-difficulty="Easy">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/meta.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=M&background=1e293b&color=94a3b8'" alt="Meta">
+                    <span class="difficulty-pill easy">EASY</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>Frontend Engineer</h3>
+                    <p>Meta</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> React</span>
+                        <span><i class="fas fa-map-marker-alt"></i> Remote</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=me-front&title=Frontend%20Engineer&company=Meta" class="aurora-btn">Start Interview</a>
+            </div>
+
+            <div class="job-glass-card catalog-item" data-role="Full Stack" data-difficulty="Medium">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/microsoft.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=M&background=1e293b&color=94a3b8'" alt="Microsoft">
+                    <span class="difficulty-pill medium">MEDIUM</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>Full Stack Developer</h3>
+                    <p>Microsoft</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> .NET / React</span>
+                        <span><i class="fas fa-building"></i> Hybrid</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=ms-full&title=Full%20Stack%20Developer&company=Microsoft" class="aurora-btn">Start Interview</a>
+            </div>
+
+            <div class="job-glass-card catalog-item" data-role="Backend" data-difficulty="Hard">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/google.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=G&background=1e293b&color=94a3b8'" alt="Google">
+                    <span class="difficulty-pill hard">HARD</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>Senior Backend Engineer</h3>
+                    <p>Google</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> Go / Python</span>
+                        <span><i class="fas fa-server"></i> Scalability</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=g-back&title=Senior%20Backend%20Engineer&company=Google" class="aurora-btn">Start Interview</a>
+            </div>
+
+            <div class="job-glass-card catalog-item" data-role="Frontend" data-difficulty="Medium">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/stripe.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=S&background=1e293b&color=94a3b8'" alt="Stripe">
+                    <span class="difficulty-pill medium">MEDIUM</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>Frontend Developer</h3>
+                    <p>Stripe</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> TypeScript</span>
+                        <span><i class="fas fa-paint-brush"></i> UI/UX</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=s-front&title=Frontend%20Developer&company=Stripe" class="aurora-btn">Start Interview</a>
+            </div>
+
+            <div class="job-glass-card catalog-item" data-role="Data Science" data-difficulty="Hard">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/openai.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=O&background=1e293b&color=94a3b8'" alt="OpenAI">
+                    <span class="difficulty-pill hard">HARD</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>ML Research Engineer</h3>
+                    <p>OpenAI</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> Python</span>
+                        <span><i class="fas fa-brain"></i> LLMs</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=o-ml&title=ML%20Research%20Engineer&company=OpenAI" class="aurora-btn">Start Interview</a>
+            </div>
+
+            <div class="job-glass-card catalog-item" data-role="Backend" data-difficulty="Easy">
+                <div class="card-glow"></div>
+                <div class="job-card-header">
+                    <img src="https://logo.clearbit.com/amazon.com" class="company-logo" onerror="this.src='https://ui-avatars.com/api/?name=A&background=1e293b&color=94a3b8'" alt="Amazon">
+                    <span class="difficulty-pill easy">EASY</span>
+                </div>
+                <div class="job-card-body">
+                    <h3>Backend Developer</h3>
+                    <p>Amazon</p>
+                    <div class="job-traits">
+                        <span><i class="fas fa-code"></i> Java</span>
+                        <span><i class="fas fa-cloud"></i> AWS</span>
+                    </div>
+                </div>
+                <a href="/interview?job_id=a-back&title=Backend%20Developer&company=Amazon" class="aurora-btn">Start Interview</a>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <div class="footer-brand">
+                <h4>AI Hire<span class="dot">.</span></h4>
+                <p>Advanced Generative Intelligence for Modern Recruitment.</p>
+            </div>
+            <div class="footer-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/view_all">History</a>
+                <a href="/profile">Profile</a>
+                <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;">Logout</a>
+            </div>
+        </footer>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ url_for('static', filename='js/supabase_client.js') }}"></script>
+    
+    <script>
+        // Simple JS for filtering the catalog items
+        function filterCatalog() {
+            const roleFilter = document.getElementById('roleFilter').value;
+            const difficultyFilter = document.getElementById('difficultyFilter').value;
+            
+            const items = document.querySelectorAll('.catalog-item');
+            
+            items.forEach(item => {
+                const itemRole = item.getAttribute('data-role');
+                const itemDiff = item.getAttribute('data-difficulty');
+                
+                let roleMatch = (roleFilter === 'All' || itemRole.includes(roleFilter));
+                let diffMatch = (difficultyFilter === 'All' || itemDiff === difficultyFilter);
+                
+                if (roleMatch && diffMatch) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

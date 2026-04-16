@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Profile | AI Hire</title>
+    <meta name="description" content="Manage your professional profile and resume links.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Hidden element: lets JS know Flask session is active, also passing user_id -->
+    <span id="flask-user-id" data-user-id="{{ session.get('user_id', '') }}" style="display:none;"></span>
+
+    <style>
+        /* ====================================
+           SHARED PREMIUM STYLES
+        ==================================== */
+        :root {
+            --bg-base: #020617;
+            --surface: #0f172a;
+            --surface2: #1e293b;
+            --accent: #0ea5e9;
+            --accent-navy: #1e40af;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border: rgba(255, 255, 255, 0.07);
+            --sidebar-w: 240px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .premium-sidebar {
+            width: var(--sidebar-w);
+            background: rgba(15, 23, 42, 0.97);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 32px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .brand-logo {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: white;
+            padding: 0 28px;
+            margin-bottom: 36px;
+            letter-spacing: -1px;
+        }
+
+        .brand-logo .dot {
+            color: var(--accent);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 14px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(14, 165, 233, 0.12);
+            color: var(--accent);
+        }
+
+        .nav-item i {
+            width: 18px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .logout-btn-red {
+            color: #f87171;
+        }
+
+        .logout-btn-red:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+        }
+
+        /* ---- MAIN CONTENT ---- */
+        .main-viewport {
+            margin-left: var(--sidebar-w); 
+            flex: 1; 
+            padding: 36px 40px; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-container { flex: 1; }
+
+        /* ---- HEADER ---- */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 36px;
+        }
+
+        .welcome-text h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .welcome-text p {
+            color: var(--text-dim);
+            font-size: 1rem;
+        }
+
+        .header-tools {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Save Button */
+        .aurora-btn {
+            background: linear-gradient(135deg, var(--accent-navy), var(--accent));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: 0.25s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .aurora-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(14, 165, 233, 0.35);
+        }
+
+        /* ====================================
+           PROFILE SYSTEM LAYOUT
+        ==================================== */
+        .profile-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 32px;
+        }
+
+        /* ---- GLASS CARDS (Premium UI) ---- */
+        .glass-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            margin-bottom: 24px;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(14, 165, 233, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .card-header i {
+            color: var(--accent);
+            font-size: 1.3rem;
+        }
+
+        /* ---- LEFT SIDEBAR PANELS ---- */
+        .aside-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 32px;
+        }
+
+        .avatar-box {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-circle-xl {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--surface2), var(--accent-navy));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            border: 2px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .avatar-edit-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--accent);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 3px solid var(--surface);
+            transition: 0.2s;
+        }
+
+        .avatar-edit-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .user-name-label {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: -4px;
+        }
+
+        .user-email-label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: 0.2s;
+        }
+
+        .stat-box:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-meta strong {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .stat-meta span {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Progress Bar */
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .progress-header span:last-child {
+            color: var(--accent);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            background: var(--surface2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-navy), var(--accent));
+            transition: width 0.8s ease;
+            width: 0%;
+            border-radius: 10px;
+        }
+
+        /* ---- RIGHT FORM SECTION ---- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M1.41%200L6%204.58L10.59%200L12%201.41L6%207.41L0%201.41L1.41%200Z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            cursor: pointer;
+        }
+
+        /* Skills Chips */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .skill-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            transition: 0.2s;
+            user-select: none;
+        }
+
+        .skill-chip:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .skill-chip.active {
+            background: rgba(14, 165, 233, 0.15);
+            border-color: rgba(14, 165, 233, 0.4);
+            color: var(--accent);
+            text-shadow: 0 0 5px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Custom Skills Add */
+        .custom-skill-wrap {
+            display: flex;
+            gap: 12px;
+        }
+
+        .custom-skill-wrap input {
+            flex: 1;
+        }
+
+        .add-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Custom Skills Result Tags */
+        .added-skills-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .added-skill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 16px;
+            color: #4ade80;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .added-skill-tag i {
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .added-skill-tag i:hover {
+            color: #f87171;
+        }
+
+        /* Input with Icon inside */
+        .input-icon-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-icon-wrapper i {
+            position: absolute;
+            left: 16px;
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .input-icon-wrapper input {
+            padding-left: 44px;
+            width: 100%;
+        }
+
+        /* Upload Zone */
+        .aurora-upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+        }
+
+        .aurora-upload-zone:hover,
+        .aurora-upload-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(14, 165, 233, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+
+        .file-name-status {
+            margin-top: 12px;
+            font-weight: 700;
+            color: #4ade80;
+            font-size: 0.9rem;
+        }
+
+        /* Discard Button */
+        .discard-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .discard-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Premium Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(14, 165, 233, 0.95);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ---- FOOTER ---- */
+        .dashboard-footer {
+            margin-top: 60px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .footer-brand h4 {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .footer-brand p {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .footer-links a:hover {
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- STATIC SIDEBAR NAVIGATION -->
+    <nav class="premium-sidebar">
+        <div class="sidebar-top">
+            <a href="/dashboard" style="text-decoration:none;"><div class="brand-logo">AI Hire<span class="dot">.</span></div></a>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-item">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="/view_all" class="nav-item">
+                    <i class="fas fa-history"></i> My History
+                </a>
+                <a href="/explore" class="nav-item">
+                    <i class="fas fa-compass"></i> Explore More Interviews
+                </a>
+                <a href="/results" class="nav-item">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="/profile" class="nav-item active">
+                    <i class="fas fa-user-shield"></i> Profile
+                </a>
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;"
+                class="nav-item logout-btn-red">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-viewport">
+        <!-- HEADER -->
+        <header class="dashboard-header">
+            <div class="welcome-text">
+                <h1>Candidate Profile</h1>
+                <p>Manage your professional identity and portfolio data.</p>
+            </div>
+            <div class="header-tools">
+                <button type="button" class="aurora-btn" onclick="saveProfileData()">
+                    <i class="fas fa-save"></i> Save Profile
+                </button>
+            </div>
+        </header>
+
+        <!-- TWO COLUMN LAYOUT -->
+        <div class="profile-container">
+
+            <!-- LEFT PANEL: IDENTITY & STATS -->
+            <aside class="aside-panel">
+
+                <!-- Box 1: Avatar -->
+                <div class="glass-card avatar-box">
+                    <div class="avatar-circle-xl" id="avatar-initials">{{ initials }}</div>
+                    <div style="margin-top: 8px;">
+                        <div class="user-name-label" id="sidebar-name">{{ name }}</div> <br>
+                        <div class="user-email-label" id="sidebar-email">Secure Identity</div>
+                    </div>
+                </div>
+
+                <!-- Box 2: Average Score -->
+                <div class="glass-card" style="padding: 20px;">
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fas fa-star-half-alt"></i></div>
+                        <div class="stat-meta">
+                            <strong id="avg-score-val">--%</strong>
+                            <span>Average Technical Score</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Box 3: Profile Completion -->
+                <div class="glass-card" style="padding: 24px;">
+                    <div class="progress-header">
+                        <span>Profile Integrity</span>
+                        <span id="completion-text">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="completion-bar"></div>
+                    </div>
+                    <p
+                        style="color:var(--text-dim); font-size:0.8rem; margin-top:12px; font-weight:600; text-align:center;">
+                        Complete your profile for better AI matching.
+                    </p>
+                </div>
+
+            </aside>
+
+            <!-- RIGHT PANEL: EDITABLE FORM -->
+            <section class="form-container">
+
+                <!-- Basic Info -->
+                <div class="glass-card">
+                    <div class="card-header"><i class="fas fa-user"></i> Basic Information</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Full Name</label>
+                            <input type="text" id="prof-full-name" placeholder="Name">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Professional Bio</label>
+                            <textarea id="prof-bio" placeholder="Tell us about yourself..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="prof-phone" placeholder="+91 70000 00000">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="prof-location" placeholder="City, Country">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Info -->
+                <div class="glass-card">
+                    <div class="card-header"><i class="fas fa-briefcase"></i> Professional Focus</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Primary Role</label>
+                            <select id="prof-role">
+                                <option value="">Select Role</option>
+                                <option value="Frontend Developer">Frontend Developer</option>
+                                <option value="Backend Developer">Backend Developer</option>
+                                <option value="Full Stack Developer">Full Stack Developer</option>
+                                <option value="Data Scientist">Data Scientist</option>
+                                <option value="DevOps Engineer">DevOps Engineer</option>
+                                <option value="Product Manager">Product Manager</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Experience Level</label>
+                            <select id="prof-exp">
+                                <option value="">Select Level</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Opportunity Type</label>
+                            <select id="prof-opp">
+                                <option value="">Select Availability</option>
+                                <option value="Internship">Internship</option>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Open to all">Open to all</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resume Upload Section (Order updated) -->
+                <div class="glass-card">
+                    <div class="card-header" style="justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:12px;"><i class="fas fa-file-pdf"></i>
+                            Professional Resume</span>
+                        <button type="button" class="discard-btn" id="remove-resume-btn" onclick="discardResume()"
+                            style="display:none;">Discard</button>
+                    </div>
+                    <div class="aurora-upload-zone" id="drop-zone"
+                        onclick="document.getElementById('prof-resume-file').click()">
+                        <input type="file" id="prof-resume-file" accept="application/pdf" hidden>
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <p>Drag & drop or <strong>click to upload</strong> your resume</p>
+                            <span
+                                style="color:var(--text-dim); font-size:0.8rem; margin-top:6px; display:block;">Supported:
+                                PDF (Max 10MB)</span>
+                        </div>
+                        <div id="file-name-display" class="file-name-status"></div>
+                    </div>
+                </div>
+
+                <!-- Technical Skills -->
+                <div class="glass-card">
+                    <div class="card-header"><i class="fas fa-code"></i> Technical Stack</div>
+
+                    <div class="form-group full-width">
+                        <label>Core Technologies (Select all that apply)</label>
+                        <div class="skills-container" id="preset-skills">
+                            <div class="skill-chip">React</div>
+                            <div class="skill-chip">Vue.js</div>
+                            <div class="skill-chip">Angular</div>
+                            <div class="skill-chip">Node.js</div>
+                            <div class="skill-chip">Python</div>
+                            <div class="skill-chip">Django</div>
+                            <div class="skill-chip">Java</div>
+                            <div class="skill-chip">C++</div>
+                            <div class="skill-chip">Go</div>
+                            <div class="skill-chip">SQL</div>
+                            <div class="skill-chip">MongoDB</div>
+                            <div class="skill-chip">AWS</div>
+                            <div class="skill-chip">Docker</div>
+                            <div class="skill-chip">Kubernetes</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width" style="margin-top:20px;">
+                        <label>Add Custom Skill</label>
+                        <div class="custom-skill-wrap">
+                            <input type="text" id="custom-skill-input" placeholder="e.g. GraphQL, TailwindCSS">
+                            <button class="add-btn" onclick="addCustomSkill()"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                        <div class="added-skills-area" id="custom-skills-area"></div>
+                    </div>
+                </div>
+
+                <!-- Links & Social Presence -->
+                <div class="glass-card">
+                    <div class="card-header"><i class="fas fa-link"></i> Social Presence</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>GitHub URL</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fab fa-github"></i>
+                                <input type="url" id="prof-github" placeholder="https://github.com/username">
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>LinkedIn URL</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fab fa-linkedin"></i>
+                                <input type="url" id="prof-linkedin" placeholder="https://linkedin.com/in/username">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            <div class="footer-brand">
+                <h4>AI Hire<span class="dot">.</span></h4>
+                <p>Advanced Generative Intelligence for Modern Recruitment.</p>
+            </div>
+            <div class="footer-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/view_all">History</a>
+                <a href="/profile">Profile</a>
+                <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;">Logout</a>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i> <span>Profile updated successfully!</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ url_for('static', filename='js/supabase_client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+</body>
+
+</html>

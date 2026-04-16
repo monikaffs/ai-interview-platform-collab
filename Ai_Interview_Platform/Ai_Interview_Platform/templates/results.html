@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Report | AI Hire</title>
+    <meta name="description" content="View your AI interview performance report with per-question scoring and detailed feedback.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ====================================
+           DESIGN TOKENS
+        ==================================== */
+        :root {
+            --bg-base:    #020617;
+            --surface:    #0f172a;
+            --surface2:   #1e293b;
+            --surface3:   #263352;
+            --accent:     #0ea5e9;
+            --accent-nav: #1e40af;
+            --green:      #22c55e;
+            --amber:      #f59e0b;
+            --red:        #ef4444;
+            --text:       #f1f5f9;
+            --text-dim:   #94a3b8;
+            --border:     rgba(255,255,255,0.07);
+            --sidebar-w:  240px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .premium-sidebar {
+            width: var(--sidebar-w);
+            background: rgba(15,23,42,0.97);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 32px 0;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .brand-logo {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: white;
+            padding: 0 28px;
+            margin-bottom: 36px;
+            letter-spacing: -1px;
+        }
+        .brand-logo .dot { color: var(--accent); }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 4px; padding: 0 14px; }
+
+        .qa-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .qa-list::-webkit-scrollbar { width: 6px; }
+        .qa-list::-webkit-scrollbar-track { background: transparent; }
+        .qa-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .nav-item.active { background: rgba(14,165,233,0.12); color: var(--accent); }
+        .nav-item i { width: 18px; text-align: center; font-size: 0.95rem; }
+        .logout-btn-red { color: #f87171; }
+        .logout-btn-red:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+
+        /* ---- MAIN CONTENT ---- */
+        .main-viewport {
+            margin-left: var(--sidebar-w); 
+            flex: 1; 
+            padding: 36px 40px; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-content { flex: 1; }
+
+        .dashboard-content {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .welcome-text h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 6px; }
+        .welcome-text p { color: var(--text-dim); font-size: 0.97rem; }
+        .highlight { color: var(--accent); font-weight: 700; }
+
+        .btn-export {
+            background: linear-gradient(135deg, var(--accent-nav), var(--accent));
+            color: white;
+            padding: 11px 20px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(14,165,233,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14,165,233,0.3); }
+
+        /* ---- PREMIUM CARD ---- */
+        .premium-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transition: box-shadow 0.2s;
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        /* ---- HERO: SCORE RING ---- */
+        .hero-split {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .score-ring-wrap { display: flex; justify-content: center; align-items: center; }
+
+        .score-ring {
+            width: 175px;
+            height: 175px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: conic-gradient(var(--accent-nav) 0deg, var(--surface2) 0deg);
+            box-shadow: 0 0 30px rgba(14,165,233,0.1);
+            transition: background 0.3s ease;
+        }
+
+        .score-inner {
+            width: 135px;
+            height: 135px;
+            background: var(--surface);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .big-score { font-size: 3rem; font-weight: 900; color: white; line-height: 1; }
+        .score-denom { font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-top: 2px; }
+
+        .results-hero-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease forwards;
+            gap: 40px;
+        }
+        .results-hero-card::after {
+            content: ''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--accent);
+        }
+        .hero-main-info { flex: 1; }
+        .hero-job-title { font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 6px; }
+        .hero-company { font-size: 1rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* -- SCORE RING UI -- */
+        .score-ring-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .score-ring {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: conic-gradient(var(--accent) 0deg, var(--surface2) 0deg);
+            box-shadow: 0 0 25px rgba(14,165,233,0.15);
+            transition: background 0.3s ease;
+        }
+        .score-inner {
+            width: 110px;
+            height: 110px;
+            background: var(--surface);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .big-score { font-size: 2.2rem; font-weight: 900; color: white; line-height: 1; }
+        .score-denom { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-top: 2px; }
+        
+        .hero-stats-row { 
+            display: flex; 
+            gap: 40px;
+            align-items: center;
+            padding-left: 40px;
+            border-left: 1px solid var(--border);
+        }
+        .hero-stat-item { text-align: center; }
+        .h-stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700; }
+        .h-stat-value { font-size: 1.4rem; font-weight: 800; color: white; }
+        .h-stat-value span { color: var(--accent); font-size: 0.9rem; }
+
+        .session-token { font-family: monospace; font-size: 0.8rem; color: var(--text-dim-more); margin-top: 10px; display: block; }
+
+        /* ---- VERDICT ---- */
+        .verdict-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 20px 28px;
+        }
+
+        .verdict-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .verdict-text h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+        .verdict-text p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+
+        /* ---- METRIC BARS ---- */
+        .metrics-grid { display: flex; flex-direction: column; gap: 20px; }
+
+        .metric-row { display: flex; flex-direction: column; gap: 8px; }
+
+        .m-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .m-label span:last-child { color: var(--accent); }
+
+        .bar-track {
+            height: 10px;
+            background: var(--surface2);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-nav), var(--accent));
+            width: 0%;
+            border-radius: 6px;
+            transition: width 1.4s cubic-bezier(0.1, 0.5, 0.1, 1);
+        }
+
+        /* ---- Q&A CARDS ---- */
+        .qa-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+            max-height: 70vh; 
+            overflow-y: auto; 
+            padding-right: 8px;
+        }
+        .qa-list::-webkit-scrollbar { width: 6px; }
+        .qa-list::-webkit-scrollbar-track { background: transparent; }
+        .qa-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+
+        .qa-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .qa-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+
+        .qa-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 22px 16px;
+            gap: 16px;
+        }
+
+        .qa-question-wrap { flex: 1; }
+
+        .q-number {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .q-text {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .score-badge {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            font-weight: 900;
+        }
+
+        .score-badge .s-num {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+        .score-badge .s-den {
+            font-size: 0.7rem;
+            opacity: 0.75;
+            font-weight: 700;
+        }
+
+        /* Score color tiers */
+        .score-high   { background: rgba(34,197,94,0.15);  color: #4ade80;  border: 1px solid rgba(34,197,94,0.3);  }
+        .score-mid    { background: rgba(245,158,11,0.15); color: #fbbf24;  border: 1px solid rgba(245,158,11,0.3); }
+        .score-low    { background: rgba(239,68,68,0.15);  color: #f87171;  border: 1px solid rgba(239,68,68,0.3);  }
+
+        .qa-card-body { padding: 0 22px 20px; }
+
+        .qa-answer-box {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+
+        .answer-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .answer-text {
+            font-size: 0.88rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .sub-scores {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .sub-chip {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--surface);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        .qa-feedback {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(14,165,233,0.05);
+            border-left: 3px solid var(--accent);
+        }
+
+        .qa-feedback i { color: var(--accent); margin-top: 2px; font-size: 0.85rem; flex-shrink: 0; }
+        .qa-feedback p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+
+        /* ---- AI INSIGHT ---- */
+        .insight-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+        .ai-icon {
+            width: 46px; height: 46px;
+            background: rgba(14,165,233,0.1);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent); font-size: 1.3rem;
+        }
+        .insight-body {
+            background: rgba(255,255,255,0.02);
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            line-height: 1.7;
+            color: var(--text-dim);
+            font-size: 0.93rem;
+        }
+
+        /* ---- FOOTER ---- */
+        .dashboard-footer {
+            margin-top: 20px;
+            padding: 32px 0;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        .footer-logo { color: white; font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+        .footer-logo span { color: var(--accent); }
+        .socials { display: flex; gap: 16px; font-size: 1.1rem; }
+        .socials i:hover { color: white; cursor: pointer; }
+
+        /* ---- LOADING STATE ---- */
+        .results-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .results-loading .spinner { font-size: 2.5rem; color: var(--accent); margin-bottom: 16px; }
+        .results-loading h3 { font-size: 1.3rem; font-weight: 700; color: white; margin-bottom: 8px; }
+
+        /* ---- ANIMATIONS ---- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: fadeInUp 0.4s ease forwards; }
+
+        @keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="premium-sidebar">
+        <div class="sidebar-top">
+            <a href="/dashboard" style="text-decoration:none;"><div class="brand-logo">AI Hire<span class="dot">.</span></div></a>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-item"><i class="fas fa-th-large"></i> Dashboard</a>
+                <a href="/view_all" class="nav-item"><i class="fas fa-history"></i> My History</a>
+                <a href="/explore" class="nav-item"><i class="fas fa-compass"></i> Explore</a>
+                <a href="/results" class="nav-item active"><i class="fas fa-chart-line"></i> Analytics</a>
+                <a href="/profile" class="nav-item"><i class="fas fa-user-shield"></i> Profile</a>
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;"
+               class="nav-item logout-btn-red" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-viewport">
+        <div class="dashboard-content">
+
+            <!-- PAGE HEADER -->
+            <header class="dashboard-header animate-in">
+                <div class="welcome-text">
+                    <h1>Performance Report</h1>
+                    <p>Detailed evaluation for <span class="highlight">{{ name }}</span></p>
+                </div>
+                <button class="btn-export" onclick="window.print()">
+                    <i class="fas fa-file-export"></i> Export Report
+                </button>
+            </header>
+
+            <!-- LOADING STATE (hidden after data loads) -->
+            <div id="results-loading" class="results-loading premium-card">
+                <div class="spinner"><i class="fas fa-brain fa-spin"></i></div>
+                <h3>Compiling Your Report</h3>
+                <p>Fetching your evaluation data...</p>
+            </div>
+
+            <!-- CONTENT (revealed by JS) -->
+            <div id="results-content" style="display:none;">
+
+                <!-- SECTION 1: MINIMAL HORIZONTAL CARD (Integrated Circular Score) -->
+                <section class="results-hero-card" id="hero-section">
+                    <div class="hero-main-info">
+                        <div class="hero-company" id="display-company">AI Hire</div>
+                        <div class="hero-job-title" id="display-role">Performance Report</div>
+                        <span class="session-token" id="session-token-display">Session: #LOADING</span>
+                    </div>
+
+                    <div class="hero-stats-row">
+                        <div class="hero-stat-item">
+                            <div class="h-stat-label">Interview Time</div>
+                            <div class="h-stat-value" id="display-duration">00:00</div>
+                        </div>
+                        <div class="score-ring-wrap">
+                            <div class="score-ring" id="main-score-ring">
+                                <div class="score-inner">
+                                    <span class="big-score" id="overall-score-text">0</span>
+                                    <span class="score-denom">/ 10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: FINAL VERDICT -->
+                <section class="premium-card animate-in" id="verdict-section" style="padding: 0;">
+                    <div class="verdict-card">
+                        <div class="verdict-icon" id="verdict-icon"></div>
+                        <div class="verdict-text">
+                            <h3 id="verdict-title">Evaluating...</h3>
+                            <p id="verdict-description">Your verdict is being calculated based on your average score.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 3: COMPETENCY BARS -->
+                <section class="premium-card animate-in">
+                    <div class="section-label">Competency Breakdown</div>
+                    <div class="section-title">Skill Metrics</div>
+                    <div class="metrics-grid">
+                        <div class="metric-row">
+                            <div class="m-label">
+                                <span>Technical Accuracy</span>
+                                <span id="val-technical">0%</span>
+                            </div>
+                            <div class="bar-track"><div class="bar-fill" id="bar-technical"></div></div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="m-label">
+                                <span>Communication Clarity</span>
+                                <span id="val-communication">0%</span>
+                            </div>
+                            <div class="bar-track"><div class="bar-fill" id="bar-communication"></div></div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="m-label">
+                                <span>Answer Relevance</span>
+                                <span id="val-confidence">0%</span>
+                            </div>
+                            <div class="bar-track"><div class="bar-fill" id="bar-confidence"></div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: PER-QUESTION BREAKDOWN -->
+                <section class="premium-card animate-in">
+                    <div class="section-label">Question-by-Question</div>
+                    <div class="section-title">Detailed Evaluation</div>
+                    <div class="qa-list" id="qa-cards-container">
+                        <!-- Q&A cards injected by results.js -->
+                    </div>
+                </section>
+
+                <!-- SECTION 5: AI BEHAVIORAL INSIGHT -->
+                <section class="premium-card animate-in">
+                    <div class="insight-header">
+                        <div class="ai-icon"><i class="fas fa-microchip"></i></div>
+                        <div>
+                            <div class="section-label">AI Analysis</div>
+                            <h3 style="font-size:1.1rem; font-weight:700;">Behavioral Insight</h3>
+                        </div>
+                    </div>
+                    <div class="insight-body">
+                        <p id="ai-summary-text">Generating insight from your session...</p>
+                    </div>
+                </section>
+
+                <!-- FOOTER -->
+                <footer class="dashboard-footer">
+                    <div>
+            </div><!-- /#results-content -->
+
+            <!-- GLOBAL ANALYTICS FALLBACK -->
+            <div id="global-analytics-content" style="display:none; padding-top:20px;">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-globe-americas" style="margin-right:10px; color:var(--accent);"></i>Global Performance Summary</h2>
+                    <p style="color:var(--text-dim); margin-bottom:30px;">Overview of your collective progress across all evaluation sessions.</p>
+                </div>
+
+                <div class="performance-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; margin-bottom:40px;">
+                    <div class="result-card" style="padding:40px; text-align:center;">
+                        <h4 style="color:var(--text-dim); font-size:0.9rem; text-transform:uppercase; margin-bottom:15px; letter-spacing:1px;">Cumulative Avg Score</h4>
+                        <div style="font-size:4rem; font-weight:900; color:white; line-height:1;" id="global-avg-score">—</div>
+                        <div style="color:var(--accent); font-weight:700; margin-top:10px;">out of 100%</div>
+                    </div>
+                    <div class="result-card" style="padding:40px;">
+                        <h4 style="color:var(--text-dim); font-size:0.9rem; text-transform:uppercase; margin-bottom:20px; letter-spacing:1px;">Historical Progress</h4>
+                        <div id="global-scores-list" style="display:flex; flex-direction:column; gap:12px;">
+                            <!-- List of past scores -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="dashboard-footer">
+                <div class="footer-brand">
+                    <h4>AI Hire<span class="dot">.</span></h4>
+                    <p>Advanced Generative Intelligence for Modern Recruitment.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/view_all">History</a>
+                    <a href="/profile">Profile</a>
+                    <a href="#" onclick="window.signOutUser && window.signOutUser(); return false;">Logout</a>
+                </div>
+            </footer>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ url_for('static', filename='js/supabase_client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/results.js') }}"></script>
+</body>
+
+</html>

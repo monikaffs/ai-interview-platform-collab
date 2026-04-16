@@ -1,0 +1,512 @@
+/* --- FIXING THE CLUTTERED INTERVIEW LAYOUT --- */
+
+.interview-page {
+    background: #0f172a;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header Fix */
+.interview-header {
+    height: 80px;
+    padding: 0 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e293b;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    z-index: 10;
+}
+
+.header-left { display: flex; align-items: center; gap: 20px; }
+
+/* Main Layout Fix */
+.interview-layout {
+    display: grid;
+    grid-template-columns: 1fr 450px; /* Video is larger, Chat is fixed width */
+    height: calc(100vh - 80px);
+    width: 100%;
+}
+
+/* Video Panel Fix */
+.video-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0f172a;
+    padding: 20px;
+}
+
+.avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 100px; /* Space for the video box below */
+}
+
+/* User Video Fix */
+
+/* 1. TEXT COLOR FIXES */
+.chat-header, 
+.role-badge, 
+.video-label, 
+.header-left h2, 
+.live-indicator {
+    color: #ffffff !important;
+}
+
+.chat-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 2. BEAUTIFUL CHAT BUBBLES */
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #1e293b; /* Slightly lighter than the background for contrast */
+}
+
+.message {
+    max-width: 85%;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+}
+
+/* AI Message - Professional Gray/Slate */
+.ai-message {
+    align-self: flex-start;
+    background: #334155;
+    color: #f1f5f9;
+    border-radius: 18px 18px 18px 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* User Message - Clean Blue */
+.user-message {
+    align-self: flex-end;
+    background: #4cc9f0;
+    color: white;
+    border-radius: 18px 18px 2px 18px;
+    box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Input Area Refinement */
+.chat-input-area {
+    background: #1e293b;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-wrapper {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 5px 15px;
+}
+
+#user-input::placeholder {
+    color: #64748b;
+}
+.user-video-container {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    width: 280px;
+    height: 180px;
+    background: #1e293b; /* Fallback color */
+    border-radius: 12px;
+    border: 2px solid #4cc9f0;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+#user-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- BUTTON STYLE FIXES --- */
+
+.btn-primary {
+    background: #4cc9f0;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary:hover { background: #38b6e0; }
+.btn-danger:hover { background: #dc2626; }
+
+/* Rules Overlay Fix */
+.rules-overlay {
+    position: fixed;
+    top:0; left:0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.98);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.rules-card {
+    background: white;
+    color: #1e293b;
+    padding: 40px;
+    border-radius: 20px;
+    width: 500px;
+    text-align: center;
+}
+
+.rules-footer {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+/* RULES OVERLAY */
+.rules-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rules-card {
+    background: white;
+    color: #1e293b;
+    width: 90%;
+    max-width: 600px;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.rules-header { text-align: center; margin-bottom: 30px; }
+.icon-circle {
+    width: 60px; height: 60px; background: #f0f9ff; color: #4cc9f0;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 15px; font-size: 1.5rem;
+}
+
+.rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+.rule-item { display: flex; gap: 15px; align-items: flex-start; }
+.rule-item i { color: #4cc9f0; margin-top: 4px; }
+.rule-item h4 { margin: 0; font-size: 0.95rem; }
+.rule-item p { margin: 0; font-size: 0.8rem; color: #64748b; }
+
+/* LAYOUT */
+
+.live-indicator {
+    background: rgba(239, 68, 68, 0.1); color: #ef4444;
+    padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;
+}
+.live-indicator .dot {
+    height: 8px; width: 8px; background: #ef4444; border-radius: 50%;
+    display: inline-block; margin-right: 5px; animation: pulse 1.5s infinite;
+}
+
+
+
+/* LEFT PANEL */
+.video-panel {
+    position: relative; /* Container for the pinned video */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-video-container.pinned-video {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    width: 280px;
+    height: 180px;
+    z-index: 100; /* Stays on top of everything */
+    background: #000;
+    border-radius: 15px;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+
+.avatar-circle.big-avatar {
+    width: 220px;   /* Increased from 140px */
+    height: 220px;  /* Increased from 140px */
+    border: 4px solid #4cc9f0;
+    box-shadow: 0 0 30px rgba(76, 201, 240, 0.3);
+}
+
+
+.avatar-circle {
+    width: 140px; height: 140px; border-radius: 50%; background: #1e293b;
+    border: 3px solid #4cc9f0; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+}
+.avatar-circle img { width: 70%; }
+
+.status-pill {
+    background: #4cc9f0; color: white; padding: 5px 15px;
+    border-radius: 20px; font-size: 0.8rem; margin-top: 15px;
+}
+
+.user-video-container {
+    width: 320px; height: 200px; border-radius: 16px; overflow: hidden;
+    position: absolute; bottom: 30px; left: 30px; border: 2px solid rgba(255,255,255,0.1);
+}
+#user-video { width: 100%; height: 100%; object-fit: cover; }
+.video-label { position: absolute; top: 10px; left: 10px; font-size: 0.7rem; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; }
+
+/* RIGHT PANEL: CHAT */
+.chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Fill the right side */
+    background: #1e293b;
+    overflow: hidden; /* Prevents the whole panel from scrolling */
+}
+
+.chat-header { padding: 20px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+
+.chat-messages {
+    flex: 1; /* Takes all available space between header and input */
+    overflow-y: auto; /* ENABLE SCROLLING */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* Custom Scrollbar for better look */
+}
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+
+.chat-input-area {
+    flex-shrink: 0; /* Prevents input from being squashed */
+    background: #1e293b;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-wrapper {
+    background: #0f172a; border-radius: 12px; display: flex; align-items: center; padding: 10px;
+}
+#user-input {
+    flex: 1; background: transparent; border: none; color: white; padding: 10px; outline: none;
+}
+.mic-icon-btn, .send-icon-btn {
+    background: transparent; border: none; color: #94a3b8; padding: 10px; cursor: pointer; transition: 0.3s;
+}
+.mic-icon-btn:hover { color: #ef4444; }
+.send-icon-btn:hover { color: #4cc9f0; }
+
+/* Pulse Animation */
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 1; }
+    70% { transform: scale(1.1); opacity: 0.7; }
+    100% { transform: scale(0.95); opacity: 1; }
+}
+
+/* Main Interview Section */
+/* Update these specific blocks in your style.css */
+
+.interview-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    height: 100vh; /* Lock the section to the screen height */
+    overflow: hidden; /* Prevent the whole page from scrolling */
+}
+
+.avatar-container {
+    flex-shrink: 0; /* Prevents the avatar from shrinking or growing weirdly */
+    text-align: center;
+    margin-bottom: 10px;
+    padding-top: 10px;
+}
+
+.avatar-circle {
+    width: 120px; /* Reduced size from 180px */
+    height: 120px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #4cc9f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+}
+
+.chat-window {
+    width: 100%;
+    max-width: 700px;
+    flex-grow: 1; /* This tells the chat to take all available space */
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    overflow-y: auto; /* Only the chat window should scroll */
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+#avatar-img {
+    width: 70%;
+    height: auto;
+    z-index: 11;
+}
+
+/* The Pulse Effect - Now constrained to the circle */
+.ai-visual-speaking::before {
+    content: "";
+    position: absolute;
+    top: -8px; /* Offset to start slightly outside the border */
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border: 6px solid #4cc9f0;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    z-index: -1; /* Stays behind the avatar */
+    opacity: 0;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+}
+
+
+
+
+
+.ai-speaking-indicator {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Chat Window */
+.chat-window {
+    width: 100%;
+    max-width: 800px;
+    flex: 1;
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Message Bubbles */
+.message {
+    max-width: 75%;
+    padding: 12px 18px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.ai-message {
+    align-self: flex-start;
+    background-color: #f1f3f4;
+    color: #333;
+    border-bottom-left-radius: 2px;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: #4cc9f0;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+/* Input Area */
+.input-area {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    gap: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+#user-input {
+    flex: 1;
+    border: none;
+    padding: 10px 20px;
+    outline: none;
+    font-size: 1rem;
+}

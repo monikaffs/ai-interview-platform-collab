@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup | AI Interview Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="setup-body">
+
+    <div class="setup-container">
+        <div class="setup-card">
+            <h2>Hardware Check</h2>
+            <p>Ensure your camera and microphone are working correctly before starting.</p>
+
+            <div class="media-preview">
+                <!-- Live Camera Feed -->
+                <video id="video-preview" autoplay playsinline muted></video>
+                <div id="mic-indicator">
+                    <div id="mic-bar"></div>
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <button id="toggle-cam" class="control-btn"><i class="fas fa-video"></i> Camera On</button>
+                <button id="toggle-mic" class="control-btn"><i class="fas fa-microphone"></i> Mic On</button>
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> Instructions:</h3>
+                <ul>
+                    <li>Find a quiet, well-lit room.</li>
+                    <li>Ensure your face is clearly visible.</li>
+                    <li>Speak clearly into the microphone.</li>
+                    <li>The interview will take approximately 10-15 minutes.</li>
+                </ul>
+            </div>
+
+            <div class="setup-footer">
+                <a href="/dashboard" class="secondary-btn">Back to Dashboard</a>
+                <button id="start-interview-btn" class="primary-btn">Start Interview <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('video-preview');
+        const startBtn = document.getElementById('start-interview-btn');
+        let stream;
+
+        // 1. Request Camera and Mic
+        async function startPreview() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoElement.srcObject = stream;
+                setupMicIndicator(stream);
+            } catch (err) {
+                console.error("Error accessing media devices.", err);
+                alert("Please allow camera and microphone access to continue.");
+            }
+        }
+
+        // 2. Audio Level Indicator (Visual Mic Check)
+        function setupMicIndicator(stream) {
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const micBar = document.getElementById('mic-bar');
+
+            function updateMeter() {
+                analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                micBar.style.width = (average * 2) + "%"; // Simple visual feedback
+                requestAnimationFrame(updateMeter);
+            }
+            updateMeter();
+        }
+
+        // 3. Redirect to Interview
+        startBtn.onclick = () => {
+            // Stop camera before leaving to free up hardware
+            if(stream) stream.getTracks().forEach(track => track.stop());
+            window.location.href = "/interview";
+        };
+
+        window.onload = startPreview;
+    </script>
+</body>
+</html>
